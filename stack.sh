@@ -97,7 +97,7 @@ init() {
 
     info "Adding Helm repositories..."
     helm repo add strimzi https://strimzi.io/charts/
-    helm repo add spark-operator https://googlecloudplatform.github.io/spark-on-k8s-operator
+    helm repo add spark-operator https://kubeflow.github.io/spark-operator
     helm repo update
 
     info "Installing Strimzi Kafka Operator..."
