@@ -39,7 +39,7 @@ Make sure you have these tools installed on your local machine:
 ## 📂 Directory Structure
 
 Organize your project files as shown below for the scripts to work correctly.
-
+```bash
 ├── configs/
 │   ├── kafka/
 │   │   ├── kafka-cluster.yaml
@@ -49,7 +49,7 @@ Organize your project files as shown below for the scripts to work correctly.
 ├── stack.sh
 ├── sample_kafka_process.sh
 └── README.md
-
+```
 ---
 
 ## 🚀 Quick Start Guide
