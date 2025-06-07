@@ -23,7 +23,7 @@ spec:
       - name: external
         port: 9094
         type: nodeport
-        tls: true
+        tls: false
         authentication:
           type: scram-sha-512
     config:
