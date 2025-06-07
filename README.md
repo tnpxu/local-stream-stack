@@ -38,7 +38,6 @@ Make sure you have these tools installed on your local machine:
 
 ## 📂 Directory Structure
 
-Organize your project files as shown below for the scripts to work correctly.
 ```bash
 ├── configs/
 │   ├── kafka/
