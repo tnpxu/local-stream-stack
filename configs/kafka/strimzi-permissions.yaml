@@ -1,0 +1,28 @@
+# configs/kafka/strimzi-permissions.yaml
+# This ClusterRole grants the permission to get the Kubernetes version,
+# which is required by the Strimzi operator to start up correctly.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: strimzi-version-checker
+rules:
+- apiGroups: [""]
+  verbs: ["get"]
+  resources: ["version"]
+---
+# This binds the above role to the Strimzi Cluster Operator's Service Account.
+# The Service Account is created by the Helm chart in the specified namespace.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: strimzi-version-checker-binding
+subjects:
+- kind: ServiceAccount
+  # The name of the ServiceAccount created by the Strimzi Helm chart.
+  name: strimzi-cluster-operator
+  # The namespace where the operator is installed.
+  namespace: kafka
+roleRef:
+  kind: ClusterRole
+  name: strimzi-version-checker
+  apiGroup: rbac.authorization.k8s.io

@@ -1,32 +1,15 @@
 # configs/kafka/kafka-users.yaml
-apiVersion: kafka.strimzi.io/v1beta2
-kind: KafkaUser
-metadata:
-  name: spark-user
-  labels:
-    strimzi.io/cluster: my-kafka-cluster
-spec:
-  authentication:
-    type: scram-sha-512
-  authorization:
-    type: simple
-    acls:
-      - resource: { type: topic, name: input-topic, patternType: literal }
-        operations: [ Write, Create, Describe ]
-        host: "*"
-      - resource: { type: topic, name: output-topic, patternType: literal }
-        operations: [ Read, Describe ]
-        host: "*"
-      - resource: { type: group, name: spark-consumer-group, patternType: literal }
-        operations: [ Read ]
-        host: "*"
----
+# Defines only the admin user for the cluster.
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
   name: admin-user
+  namespace: kafka
   labels:
+    # This label connects the user to our Kafka cluster
     strimzi.io/cluster: my-kafka-cluster
 spec:
   authentication:
     type: scram-sha-512
+  # Authorization is handled by listing this user as a 'super.user' in the main Kafka resource,
+  # so no specific ACLs are needed here.
