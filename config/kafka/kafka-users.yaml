@@ -1,0 +1,32 @@
+# configs/kafka/kafka-users.yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: spark-user
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+spec:
+  authentication:
+    type: scram-sha-512
+  authorization:
+    type: simple
+    acls:
+      - resource: { type: topic, name: input-topic, patternType: literal }
+        operations: [ Write, Create, Describe ]
+        host: "*"
+      - resource: { type: topic, name: output-topic, patternType: literal }
+        operations: [ Read, Describe ]
+        host: "*"
+      - resource: { type: group, name: spark-consumer-group, patternType: literal }
+        operations: [ Read ]
+        host: "*"
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaUser
+metadata:
+  name: admin-user
+  labels:
+    strimzi.io/cluster: my-kafka-cluster
+spec:
+  authentication:
+    type: scram-sha-512
