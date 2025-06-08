@@ -4,6 +4,7 @@ set -o pipefail
 
 # --- Configuration ---
 readonly KAFKA_NAMESPACE="kafka"
+readonly KAFKA_CLUSTER_NAME="my-kafka-cluster"
 readonly KAFKA_BROKER="127.0.0.1:9094"
 
 # Color Codes
@@ -16,9 +17,11 @@ readonly NC='\033[0m'
 info() {
   echo -e "${GREEN}[INFO] ${*}${NC}"
 }
+
 warn() {
   echo -e "${YELLOW}[WARN] ${*}${NC}"
 }
+
 error() {
   echo -e "${RED}[ERROR] ${*}${NC}"
   exit 1
@@ -29,7 +32,6 @@ get_kafka_details() {
   if [ -n "$KCAT_USER" ]; then
     return
   fi
-
   info "Fetching Kafka connection details..."
   command -v kcat >/dev/null 2>&1 || error "kcat (kafkacat) is not installed. Please install it."
 
@@ -46,7 +48,6 @@ get_kafka_details() {
 # Defines the standard kcat command with all necessary security flags.
 run_kcat() {
   get_kafka_details
-  # --- MODIFIED: Using SASL_PLAINTEXT and removed all SSL flags ---
   kcat -b "$KAFKA_BROKER" \
     -X security.protocol=SASL_PLAINTEXT \
     -X sasl.mechanisms=SCRAM-SHA-512 \
@@ -66,12 +67,48 @@ create_topic() {
   if [ -z "$topic_name" ]; then
     error "Topic name is required. Usage: $0 create_topic <topic-name>"
   fi
-  info "Attempting to create topic '$topic_name'..."
-  if echo "Topic creation message for $topic_name" | run_kcat -t "$topic_name" -P -c 1; then
-    info "Topic '$topic_name' created successfully or already exists."
-  else
-    error "Failed to create topic '$topic_name'."
+  
+  info "Creating KafkaTopic resource '$topic_name' to be managed by Strimzi..."
+  
+  # Using a "here document" to create the YAML and pipe it to kubectl
+  cat <<EOF | kubectl apply -n "$KAFKA_NAMESPACE" -f -
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: $topic_name
+  labels:
+    strimzi.io/cluster: $KAFKA_CLUSTER_NAME
+spec:
+  partitions: 1
+  replicas: 1
+EOF
+  
+  info "Waiting for topic '$topic_name' to become ready..."
+  if ! kubectl wait "kafkatopic/$topic_name" -n "$KAFKA_NAMESPACE" --for=condition=Ready --timeout=60s; then
+      error "Topic '$topic_name' did not become ready in time."
   fi
+  info "Topic '$topic_name' created and ready."
+}
+
+delete_topic() {
+  local topic_name="$1"
+  if [ -z "$topic_name" ]; then
+    error "Topic name is required. Usage: $0 delete_topic <topic-name>"
+  fi
+  
+  warn "This will delete the Kafka topic '$topic_name' from the cluster."
+  read -p "Are you sure? (y/n) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      info "Operation cancelled."
+      exit 0
+  fi
+
+  info "Deleting KafkaTopic resource '$topic_name'..."
+  if ! kubectl delete kafkatopic "$topic_name" -n "$KAFKA_NAMESPACE"; then
+    error "Failed to delete topic '$topic_name'. Does it exist?"
+  fi
+  info "Topic '$topic_name' deleted successfully."
 }
 
 produce() {
@@ -89,31 +126,67 @@ consume() {
   if [ -z "$topic_name" ]; then
     error "Topic name is required. Usage: $0 consume <topic-name>"
   fi
-  info "Starting consumer for topic '${YELLOW}$topic_name${NC}'."
+  info "Starting consumer for topic '${YELLOW}$topic_name${NC}' from the beginning."
   info "Listening for messages... Press ${YELLOW}Ctrl+C${NC} to exit."
-  run_kcat -t "$topic_name" -C
+  run_kcat -t "$topic_name" -C -o beginning
 }
 
-debug_connection() {
-    warn "Running connection test with extra debug information..."
-    run_kcat -d security,broker -L
+consume_from_offset() {
+  local topic_name="$1"
+  local offset="$2"
+  if [ -z "$topic_name" ] || [ -z "$offset" ]; then
+    error "Topic name and offset are required. Usage: $0 consume_from_offset <topic-name> <offset>"
+  fi
+  info "Starting consumer for topic '${YELLOW}$topic_name${NC}' from offset ${YELLOW}$offset${NC}."
+  info "Listening for messages... Press ${YELLOW}Ctrl+C${NC} to exit."
+  run_kcat -t "$topic_name" -C -o "$offset"
+}
+
+drain() {
+  local topic_name="$1"
+  if [ -z "$topic_name" ]; then
+    error "Topic name is required. Usage: $0 drain <topic-name>"
+  fi
+  info "Draining all messages from topic '${YELLOW}$topic_name${NC}' from the beginning..."
+  # -e flag exits kcat when the last message is reached
+  run_kcat -t "$topic_name" -C -o beginning -e
+  info "Drain complete."
+}
+
+drain_from_offset() {
+  local topic_name="$1"
+  local offset="$2"
+  if [ -z "$topic_name" ] || [ -z "$offset" ]; then
+    error "Topic name and offset are required. Usage: $0 drain_from_offset <topic-name> <offset>"
+  fi
+  info "Draining messages from topic '${YELLOW}$topic_name${NC}' starting at offset ${YELLOW}$offset${NC}..."
+  run_kcat -t "$topic_name" -C -o "$offset" -e
+  info "Drain complete."
 }
 
 # --- Main Command Router ---
 usage() {
   echo "Usage: $0 {command} [arguments]"
   echo ""
-  echo "A simple tool to interact with the Kafka cluster using kcat (SASL_PLAINTEXT)."
+  echo "A tool to interact with the Kafka cluster using kcat."
   echo ""
-  echo "--- Available Commands ---"
+  echo "--- Topic Management ---"
   echo "  list_topics             - Lists all brokers, topics, and consumer groups."
-  echo "  create_topic <name>     - Creates a new topic."
+  echo "  create_topic <name>     - Creates a new topic managed by Strimzi."
+  echo "  delete_topic <name>     - Deletes a topic managed by Strimzi."
+  echo ""
+  echo "--- Producing and Consuming ---"
   echo "  produce <topic>         - Interactively produce messages to a topic."
-  echo "  consume <topic>         - Consume and print all messages from a topic."
+  echo "  consume <topic>         - Consume all messages and wait for new ones."
+  echo "  consume_from_offset <topic> <offset> - Consume messages starting from a specific offset."
+  echo ""
+  echo "--- Draining Messages (Consume and Exit) ---"
+  echo "  drain <topic>           - Drains all messages from the beginning of a topic and exits."
+  echo "  drain_from_offset <topic> <offset> - Drains messages from a specific offset and exits."
 }
 
 case "$1" in
-  list_topics|create_topic|produce|consume|debug_connection)
+  list_topics|create_topic|delete_topic|produce|consume|consume_from_offset|drain|drain_from_offset)
     "$@"
     ;;
   *)
