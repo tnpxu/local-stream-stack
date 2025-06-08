@@ -94,6 +94,11 @@ consume() {
   run_kcat -t "$topic_name" -C
 }
 
+debug_connection() {
+    warn "Running connection test with extra debug information..."
+    run_kcat -d security,broker -L
+}
+
 # --- Main Command Router ---
 usage() {
   echo "Usage: $0 {command} [arguments]"
@@ -108,7 +113,7 @@ usage() {
 }
 
 case "$1" in
-  list_topics|create_topic|produce|consume)
+  list_topics|create_topic|produce|consume|debug_connection)
     "$@"
     ;;
   *)

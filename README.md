@@ -132,8 +132,8 @@ Organize your project files as shown below for the scripts to work correctly.
 
 | Command                       | Description                                                     |
 | ----------------------------- | --------------------------------------------------------------- |
-| `./sample_kafka_process.sh list-topics` | Lists all brokers, topics, and consumer groups.                 |
-| `./sample_kafka_process.sh create-topic <name>` | Creates a new topic.                                            |
+| `./sample_kafka_process.sh list_topics` | Lists all brokers, topics, and consumer groups.                 |
+| `./sample_kafka_process.sh create_topic <name>` | Creates a new topic.                                            |
 | `./sample_kafka_process.sh produce <topic>` | Interactively produce messages to a topic.                      |
 | `./sample_kafka_process.sh consume <topic>` | Consume and print all messages from a topic.                    |
 
