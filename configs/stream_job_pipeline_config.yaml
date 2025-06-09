@@ -1,0 +1,36 @@
+app_name: "StreamJobRefactored"
+
+source:
+  type: "kafka"
+  config:
+    bootstrap_servers: "localhost:9092" # Was "kafka:9092" in original, using localhost for consistency
+    input_topic: "input-topic"
+    # Kafka security settings
+    security:
+      protocol: "SASL_PLAINTEXT" # Assuming SASL_PLAINTEXT based on JAAS config
+      sasl_mechanism: "SCRAM-SHA-512"
+      username: "admin-user" # From original stream_job.py
+      password_env_var: "KAFKA_ADMIN_PASSWORD" # Env var used in original stream_job.py
+    # Optional: Add other KafkaReader options if needed, e.g.
+    # startingOffsets: "latest"
+    # failOnDataLoss: "false"
+
+processors:
+  - name: "UppercaseValue"
+    class: "pyspark_stream.processors.custom_processors.SimpleTransformProcessor"
+    # No specific params needed for SimpleTransformProcessor as it operates on fixed 'value' column
+
+sink:
+  type: "kafka"
+  config:
+    bootstrap_servers: "localhost:9092" # Consistent with source
+    output_topic: "output-topic"
+    checkpoint_location_output: "/tmp/spark-checkpoints/stream_job_refactored" # Made slightly more specific
+    # Kafka security settings (assuming same credentials for output)
+    security:
+      protocol: "SASL_PLAINTEXT"
+      sasl_mechanism: "SCRAM-SHA-512"
+      username: "admin-user"
+      password_env_var: "KAFKA_ADMIN_PASSWORD"
+    # Optional: Add other KafkaWriter options if needed
+    # query_name: "StreamJobRefactoredQuery"
