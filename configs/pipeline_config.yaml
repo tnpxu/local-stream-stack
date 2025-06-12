@@ -1,0 +1,49 @@
+app_name: "MyStreamingApplication" # General application/pipeline name
+
+source:
+  type: "kafka"
+  config_key: "kafka_input_reader" # Key to find specific Kafka config in a shared app_config.yaml or direct config
+  # The actual Kafka connection details can be in a shared app_config.yaml
+  # or could be fully specified here. For this example, let's assume
+  # they are found under 'kafka_input_reader' in a loaded app_config.yaml
+  # or this 'config' block IS the kafka_input_reader config.
+  # For simplicity in this example, we'll make this block self-contained for the reader.
+  config:
+    bootstrap_servers: "localhost:9092"
+    input_topic: "input_stream_topic" # Changed from 'subscribe' to 'input_topic' to match KafkaReader
+    # Example: Kafka security settings from app_config.yaml could be referenced or duplicated
+    security:
+      protocol: "SASL_PLAINTEXT"
+      sasl_mechanism: "SCRAM-SHA-512"
+      username: "pipeline_user"
+      password_env_var: "KAFKA_PIPELINE_PASSWORD"
+    # other KafkaReader specific options like startingOffsets, etc.
+    # startingOffsets: "latest"
+
+processors:
+  - name: "NoOpProcessor1" # Optional: for logging/identification
+    class: "pyspark_stream.processors.base_processor.NoOpProcessor"
+    params:
+      custom_message: "NoOpProcessor instance 1 running"
+  - name: "AnotherNoOp"
+    class: "pyspark_stream.processors.base_processor.NoOpProcessor" # Assuming NoOpProcessor is in base_processor.py
+    params:
+      custom_message: "This is the second NoOpProcessor"
+      # Example of a parameter specific to this instance
+      instance_id: "no_op_2"
+
+sink:
+  type: "kafka"
+  config_key: "kafka_output_writer" # Similar to source, for specific writer config
+  config:
+    bootstrap_servers: "localhost:9092"
+    output_topic: "output_stream_topic" # Changed from 'topic' to 'output_topic' to match KafkaWriter
+    checkpoint_location_output: "/tmp/spark_checkpoints/my_streaming_pipeline"
+    # Example: Kafka security settings (could be same as reader or different)
+    security:
+      protocol: "SASL_PLAINTEXT"
+      sasl_mechanism: "SCRAM-SHA-512"
+      username: "pipeline_user"
+      password_env_var: "KAFKA_PIPELINE_PASSWORD"
+    # other KafkaWriter specific options
+    # query_name: "MyPipelineQuery"

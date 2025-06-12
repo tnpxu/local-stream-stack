@@ -1,0 +1,20 @@
+kafka:
+  bootstrap_servers: "localhost:9092"
+  input_topic: "input_topic"
+  output_topic: "output_topic"
+  checkpoint_location_input: "/tmp/kafka_checkpoint_input" # Example checkpoint location for reader
+  checkpoint_location_output: "/tmp/kafka_checkpoint_output" # Example checkpoint location for writer
+  security:
+    protocol: "SASL_PLAINTEXT" # Or SASL_SSL, PLAINTEXT
+    sasl_mechanism: "SCRAM-SHA-512" # Or PLAIN, GSSAPI
+    # For SCRAM or PLAIN, username and password_env_var are needed
+    username: "your_kafka_user"
+    password_env_var: "KAFKA_PASSWORD" # Name of the environment variable holding the Kafka password
+    # truststore_location: "/path/to/client.truststore.jks" # Needed for SASL_SSL/SSL
+    # keystore_location: "/path/to/client.keystore.jks"   # Needed for SASL_SSL/SSL (if client auth is enabled)
+    # keystore_password_env_var: "KEYSTORE_PASSWORD"
+    # truststore_password_env_var: "TRUSTSTORE_PASSWORD"
+    # ssl_endpoint_identification_algorithm: "https" # Recommended for SSL/SASL_SSL
+# General application settings
+app_name: "PySparkStreamingApp"
+spark_master: "local[*]"
