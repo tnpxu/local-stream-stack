@@ -130,7 +130,7 @@ consume() {
   if [ -z "$topic_name" ]; then error "Topic name is required. Usage: $0 consume <topic-name>"; fi
   info "Starting consumer for topic '${YELLOW}$topic_name${NC}' from the beginning."
   info "Listening for messages... Press ${YELLOW}Ctrl+C${NC} to exit."
-  run_kcat -t "$topic_name" -C -o beginning
+  run_kcat -t "$topic_name" -f 'Key: %k\nValue: %s\n' -C -o beginning
 }
 
 consume_from_offset() {
@@ -139,7 +139,7 @@ consume_from_offset() {
   if [ -z "$topic_name" ] || [ -z "$offset" ]; then error "Usage: $0 consume_from_offset <topic-name> <offset>"; fi
   info "Starting consumer for topic '${YELLOW}$topic_name${NC}' from offset ${YELLOW}$offset${NC}."
   info "Listening for messages... Press ${YELLOW}Ctrl+C${NC} to exit."
-  run_kcat -t "$topic_name" -C -o "$offset"
+  run_kcat -t "$topic_name" -f 'Key: %k\nValue: %s\n' -C -o "$offset"
 }
 
 drain() {
@@ -147,7 +147,7 @@ drain() {
   local topic_name="$1"
   if [ -z "$topic_name" ]; then error "Topic name is required. Usage: $0 drain <topic-name>"; fi
   info "Draining (reading all existing) messages from topic '${YELLOW}$topic_name${NC}'..."
-  run_kcat -t "$topic_name" -C -o beginning -e
+  run_kcat -t "$topic_name" -f 'Key: %k\nValue: %s\n' -C -o beginning -e
   info "Drain complete."
 }
 
@@ -156,7 +156,7 @@ drain_from_offset() {
   local topic_name="$1"; local offset="$2"
   if [ -z "$topic_name" ] || [ -z "$offset" ]; then error "Usage: $0 drain_from_offset <topic-name> <offset>"; fi
   info "Draining messages from topic '${YELLOW}$topic_name${NC}' starting at offset ${YELLOW}$offset${NC}..."
-  run_kcat -t "$topic_name" -C -o "$offset" -e
+  run_kcat -t "$topic_name" -f 'Key: %k\nValue: %s\n' -C -o "$offset" -e
   info "Drain complete."
 }
 

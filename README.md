@@ -66,6 +66,16 @@ This project provides a fully automated, operator-managed stack perfect for deve
 
 See the `README.md` file inside the `apps/pyspark-stream-job` directory for instructions on how to build, run, and test the Spark application. *(This assumes you would create a specific README for that app).*
 
+```bash
+Your Machine (IDE)          |      Kubernetes Cluster
+-----------------------------|--------------------------------
+ [ Python Driver Process ] <-|--+--- [ Spark Executor Pod ]
+       | (localhost:9092)    |  |          |
+       |                     |  |          | (Connects to Kafka Service)
+       v                     |  |          v
+ [ kubectl port-forward ] <--+--+--- [ Kafka Bootstrap Service ]
+```
+
 ---
 
 ## 🤖 Script Usage
