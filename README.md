@@ -28,21 +28,40 @@ This project provides a fully automated, operator-managed stack perfect for deve
 ## 📂 Final Directory Structure
 
 ```bash
-├── apps/
-│   └── pyspark-stream-job/
-│       ├── Dockerfile
-│       ├── spark-stream-app.yaml
+├── apps
+│   └── pyspark-stream-job
+│       ├── sample_stream_job.py
 │       └── stream_job.py
-├── configs/
-│   ├── kafka/
+├── configs
+│   ├── kafka
 │   │   ├── kafka-kraft-cluster.yaml
 │   │   ├── kafka-users.yaml
 │   │   └── strimzi-permissions.yaml
-│   └── spark/
-│       └── spark-service-account.yaml
-├── stack.sh
+│   ├── spark
+│   │   └── spark-service-account.yaml
+│   ├── app_config.yaml
+│   ├── pipeline_config.yaml
+│   └── stream_job_pipeline_config.yaml
+├── pyspark_stream
+│   ├── connectors
+│   │   └── kafka_connector.py
+│   ├── config
+│   │   └── config_loader.py
+│   ├── models
+│   │   └── schema_manager.py
+│   ├── pipeline
+│   │   └── streaming_pipeline.py
+│   ├── processors
+│   │   ├── base_processor.py
+│   │   └── custom_processors.py
+│   ├── state
+│   │   └── offset_manager.py
+│   └── utils
+│       └── logger.py
+├── README.md
 ├── sample_kafka_process.sh
-└── README.md
+├── setup_local_dev.sh
+└── stack.sh
 ```
 
 ---
