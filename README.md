@@ -61,6 +61,11 @@ This project provides a fully automated, operator-managed stack perfect for deve
     ```bash
     kubectl port-forward service/my-kafka-cluster-kafka-external-bootstrap 9094:9094 -n kafka
     ```
+5.  **Expose k8s proxy:** for expose k8s service in local run this command
+    ```bash
+    kubectl proxy
+    ```
+    
 
 ### Part 2: Run the Spark Streaming Job
 
@@ -163,6 +168,13 @@ This stack is now stable because we solved several complex issues. This section 
 | `KRaft requires KafkaNodePools` & `NodePool support not enabled` | Our `configs/kafka/kafka-kraft-cluster.yaml` now correctly defines the `Kafka` resource with the `strimzi.io/node-pools: enabled` annotation, and a corresponding `KafkaNodePool` resource in the same file. |
 | `timed out waiting for...kafkausers`                      | The `init` script now reliably waits for the **existence of the user's `Secret`** instead of a `Ready` condition that doesn't exist on the `KafkaUser` CRD.                                     |
 | Host Connection Failures (`Unresolved address`, `Connection timed out`, etc.) | The `kafka-kraft-cluster.yaml` now uses an `advertisedHost` and `advertisedPort` override in the external listener, forcing all clients to connect back through the reliable `kubectl port-forward` tunnel. |
+| getSubject is supported only if a security manager is allowed | recommended use sdkman to change JDK version to 21 |
+|getSubject is supported only if a security manager is allowed (Java Gateway Error) | The host machine's modern JDK was incompatible. Solution: Abandoned running Spark on the host. The final workflow uses a local Spark installation (spark-local) managed by findspark to ensure a compatible, self-contained Java environment.|
+|Could not find a 'KafkaClient' entry in the JAAS configuration (Kafka Auth Error) | Setting the JAAS config globally on the SparkSession was not working. Solution: Moved the kafka.sasl.jaas.config property from the global Spark config into a direct .option() on both the batch verification (.read) and the streaming (.readStream) operations. This forces the Kafka client to use the correct credentials for each specific connection.|
+|namespaces "spark-apps" not found (Kubernetes Permissions Error) |The Spark driver's ServiceAccount lacked the permissions to create resources like ConfigMaps in its namespace. Solution: Updated configs/spark/spark-service-account.yaml to include a Role with permissions for pods, services, and configmaps, and a RoleBinding to grant that role to the spark service account. |
+| | |
+| | |
+
 
 ---
 ## 🧹 Teardown

@@ -93,7 +93,7 @@ init() {
     error "Kafka cluster not ready. Use './stack.sh debug_kafka'."
   fi
   info "Creating other resources..."
-  kubectl apply -f "$SPARK_SA_CONFIG"
+  kubectl apply -f "$SPARK_SA_CONFIG" -n spark-apps
   kubectl apply -f "$KAFKA_USERS_CONFIG" -n "$KAFKA_NAMESPACE"
   info "Waiting for 'admin-user' credentials secret to be generated..."
   info "\n✅ Stack initialization complete."
@@ -110,9 +110,10 @@ destroy() {
   kubectl delete --ignore-not-found=true -f "$KAFKA_KRAFT_CONFIG" -n "$KAFKA_NAMESPACE"
   kubectl delete --ignore-not-found=true -f "$STRIMZI_PERMISSIONS_CONFIG"
   info "Deleting Helm releases..."
-  if ! helm uninstall "$SPARK_HELM_RELEASE" -n "$SPARK_OPERATOR_NAMESPACE" --ignore-errors; then warn "Could not uninstall Spark Operator."; fi
-  if ! helm uninstall "$STRIMZI_HELM_RELEASE" -n "$KAFKA_NAMESPACE" --ignore-errors; then warn "Could not uninstall Strimzi."; fi
+  if ! helm uninstall "$SPARK_HELM_RELEASE" -n "$SPARK_OPERATOR_NAMESPACE" ; then warn "Could not uninstall Spark Operator."; fi
+  if ! helm uninstall "$STRIMZI_HELM_RELEASE" -n "$KAFKA_NAMESPACE" ; then warn "Could not uninstall Strimzi."; fi
   info "Deleting Namespaces..."
+  kubectl delete namespace spark-apps --ignore-not-found=true
   kubectl delete namespace "$KAFKA_NAMESPACE" --ignore-not-found=true
   kubectl delete namespace "$SPARK_OPERATOR_NAMESPACE" --ignore-not-found=true
   info "Stack destroyed."
