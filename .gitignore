@@ -183,7 +183,7 @@ cython_debug/
 # Ignore local development environment files
 spark-local/
 *.tgz
-__pycache__/
+__pycache__/*
 *.pyc
 *.pyo
 *.pyd
